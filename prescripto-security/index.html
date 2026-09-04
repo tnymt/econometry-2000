@@ -1,51 +1,840 @@
 <!doctype html>
 <html lang="tr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Prescripto Güvenlik İncelemesi — Medula, KVKK ve Güncelleme Mekanizması</title>
-<meta name="description" content="Prescripto Windows istemcisinin statik güvenlik incelemesi: Medula oturumu, CAPTCHA otomasyonu, credential saklama, KVKK veri akışı, TLS ve updater güvenliği.">
-<meta property="og:title" content="Prescripto Güvenlik İncelemesi">
-<meta property="og:description" content="Medula, KVKK, credential saklama, TLS ve güncelleme zinciri üzerine kanıta dayalı teknik inceleme.">
-<meta property="og:type" content="article">
-<style>
-:root{--ink:#172033;--muted:#5f6b7a;--line:#d9dee7;--paper:#fff;--bg:#f4f6f8;--navy:#17385f;--red:#a62d2d;--amber:#8a5b00;--green:#1f6b45;--soft:#f8fafc}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}.page{max-width:1080px;margin:0 auto;padding:36px 20px 72px}.masthead{background:var(--paper);border:1px solid var(--line);padding:34px 38px 30px}.kicker{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--navy);font-weight:700}h1{font-size:clamp(30px,5vw,52px);line-height:1.06;margin:8px 0 16px;max-width:900px}h2{font-size:27px;line-height:1.2;margin:0 0 16px}h3{font-size:19px;margin:24px 0 8px}p{margin:10px 0}.lead{font-size:18px;color:var(--muted);max-width:900px}.meta{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px;padding-top:18px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}.summary{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-top:0;background:var(--paper)}.summary>div{padding:20px 24px;border-right:1px solid var(--line)}.summary>div:last-child{border-right:0}.summary strong{display:block;font-size:20px;margin-top:4px}.label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}.body{display:grid;grid-template-columns:230px 1fr;gap:22px;margin-top:22px}.toc{position:sticky;top:18px;align-self:start;background:var(--paper);border:1px solid var(--line);padding:18px}.toc b{display:block;margin-bottom:8px}.toc a{display:block;color:var(--muted);text-decoration:none;padding:4px 0;font-size:14px}.toc a:hover{color:var(--navy)}main section{background:var(--paper);border:1px solid var(--line);padding:28px 30px;margin-bottom:18px}.note{background:var(--soft);border-left:4px solid var(--navy);padding:14px 16px;margin:16px 0}.risk-high{border-left-color:var(--red)}.risk-mid{border-left-color:var(--amber)}.risk-good{border-left-color:var(--green)}.tag{font-weight:700}.critical{color:var(--red)}.warn{color:var(--amber)}.good{color:var(--green)}table{border-collapse:collapse;width:100%;margin:14px 0 6px;font-size:14px}th,td{border-bottom:1px solid var(--line);padding:10px 9px;text-align:left;vertical-align:top}th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}code{font-size:.92em}pre{background:#111827;color:#e5e7eb;padding:16px;overflow:auto;font-size:13px;line-height:1.55}.verdict{border-top:4px solid var(--red)}ol,ul{padding-left:22px}li{margin:5px 0}.foot{color:var(--muted);font-size:13px;margin-top:28px;padding:18px 0;border-top:1px solid var(--line)}.sources a{color:var(--navy)}.print{float:right;border:1px solid var(--line);background:var(--paper);padding:8px 12px;cursor:pointer;font:inherit}@media(max-width:850px){.body{grid-template-columns:1fr}.toc{position:relative;top:auto}.summary{grid-template-columns:1fr}.summary>div{border-right:0;border-bottom:1px solid var(--line)}.summary>div:last-child{border-bottom:0}.masthead{padding:26px 24px}main section{padding:22px 20px}}@media print{body{background:white}.page{max-width:none;padding:0}.toc,.print{display:none}.body{display:block}.masthead,.summary,main section{border-color:#bbb}.summary{border-top:1px solid #bbb}main section{break-inside:avoid-page}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Prescripto 1.5.1 ve 1.5.9 Windows istemcisinin statik ve kontrollü dinamik güvenlik incelemesi.">
+  <title>Prescripto Güvenlik Analizi — 1.5.1 / 1.5.9</title>
+  <style>
+    :root {
+      --paper: #f7f8fa;
+      --sheet: #ffffff;
+      --ink: #142338;
+      --muted: #5a6777;
+      --navy: #173a63;
+      --blue: #1f6aa5;
+      --line: #d7dee7;
+      --line-strong: #aeb9c7;
+      --critical: #9e2731;
+      --critical-soft: #f7e9eb;
+      --high: #bd512f;
+      --high-soft: #faeee9;
+      --medium: #8a6300;
+      --medium-soft: #fbf4df;
+      --info: #3d657c;
+      --info-soft: #eaf2f6;
+      --good: #226447;
+      --good-soft: #e8f3ed;
+      --code: #edf2f7;
+      --shadow: 0 18px 45px rgba(20, 35, 56, .09);
+      --sans: "Aptos", "Segoe UI Variable", "Segoe UI", sans-serif;
+      --display: "Aptos Display", "Arial Narrow", "Segoe UI", sans-serif;
+      --serif: "Charter", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(23, 58, 99, .025) 1px, transparent 1px) 0 0 / 32px 32px,
+        var(--paper);
+      font: 16px/1.65 var(--serif);
+      text-rendering: optimizeLegibility;
+    }
+
+    a { color: var(--blue); text-underline-offset: 3px; }
+    a:hover { text-decoration-thickness: 2px; }
+    a:focus-visible, button:focus-visible, summary:focus-visible {
+      outline: 3px solid rgba(31, 106, 165, .35);
+      outline-offset: 3px;
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      left: 16px;
+      top: -80px;
+      padding: 10px 14px;
+      color: #fff;
+      background: var(--navy);
+      font: 700 14px/1 var(--sans);
+    }
+    .skip-link:focus { top: 14px; }
+
+    .page {
+      width: min(1240px, calc(100% - 32px));
+      margin: 22px auto 72px;
+    }
+
+    .case-header {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 270px;
+      min-height: 370px;
+      background: var(--sheet);
+      border: 1px solid var(--line-strong);
+      box-shadow: var(--shadow);
+    }
+    .case-header::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 9px;
+      background: var(--critical);
+    }
+    .case-copy { min-width: 0; padding: 54px 54px 46px 62px; }
+    .case-code {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 22px;
+      color: var(--navy);
+      font: 650 14px/1.2 var(--sans);
+      max-width: 100%;
+    }
+    .case-code::before {
+      content: "";
+      width: 32px;
+      height: 2px;
+      background: var(--critical);
+    }
+    h1, h2, h3, h4 { color: var(--ink); font-family: var(--display); }
+    h1 {
+      max-width: 780px;
+      margin: 0;
+      font-size: clamp(42px, 6vw, 76px);
+      font-weight: 720;
+      line-height: .98;
+      letter-spacing: -.045em;
+    }
+    .dek {
+      max-width: 760px;
+      margin: 26px 0 0;
+      color: var(--muted);
+      font-size: 19px;
+      line-height: 1.55;
+    }
+    .case-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      margin-top: 30px;
+      color: var(--muted);
+      font: 600 13px/1.4 var(--sans);
+    }
+    .case-meta span { border-bottom: 1px solid var(--line); padding-bottom: 3px; }
+
+    .verdict-panel {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 48px 30px 34px;
+      color: #fff;
+      background: var(--navy);
+      font-family: var(--sans);
+    }
+    .verdict-label { color: #bfd0e2; font-size: 13px; }
+    .verdict-value {
+      display: block;
+      margin-top: 10px;
+      font-family: var(--display);
+      font-size: 50px;
+      font-weight: 760;
+      line-height: .95;
+      letter-spacing: -.035em;
+    }
+    .verdict-note { max-width: 190px; margin-top: 18px; color: #d9e4ef; font-size: 14px; }
+    .print-button {
+      width: 100%;
+      padding: 11px 13px;
+      color: #fff;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.45);
+      cursor: pointer;
+      font: 650 14px/1 var(--sans);
+    }
+    .print-button:hover { background: rgba(255,255,255,.08); }
+
+    .risk-tally {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      background: var(--sheet);
+      border: 1px solid var(--line-strong);
+      border-top: 0;
+    }
+    .risk-tally > div { padding: 21px 24px; border-right: 1px solid var(--line); }
+    .risk-tally > div:last-child { border-right: 0; }
+    .tally-number { display: block; font: 760 34px/1 var(--display); }
+    .tally-name { display: block; margin-top: 7px; color: var(--muted); font: 620 13px/1 var(--sans); }
+    .risk-tally .critical .tally-number { color: var(--critical); }
+    .risk-tally .high .tally-number { color: var(--high); }
+    .risk-tally .medium .tally-number { color: var(--medium); }
+    .risk-tally .info .tally-number { color: var(--info); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 26px;
+      margin-top: 28px;
+      align-items: start;
+    }
+    .rail {
+      position: sticky;
+      top: 18px;
+      background: var(--sheet);
+      border: 1px solid var(--line);
+      box-shadow: 0 8px 26px rgba(20, 35, 56, .05);
+      font-family: var(--sans);
+    }
+    .rail-head { padding: 19px 20px 15px; border-bottom: 1px solid var(--line); }
+    .rail-title { margin: 0; font: 720 17px/1.2 var(--display); }
+    .rail-sub { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+    .rail nav { padding: 10px 0; }
+    .rail a {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 7px;
+      padding: 8px 18px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      line-height: 1.25;
+      border-left: 3px solid transparent;
+    }
+    .rail a:hover, .rail a[aria-current="true"] {
+      color: var(--navy);
+      background: #f3f6f9;
+      border-left-color: var(--blue);
+    }
+    .rail a span:first-child { color: #8996a5; font-family: var(--mono); font-size: 11px; }
+    .rail-legend { padding: 15px 18px 18px; border-top: 1px solid var(--line); }
+    .rail-legend p { margin: 0 0 10px; color: var(--muted); font-size: 11px; }
+    .legend-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    main { min-width: 0; }
+    .section {
+      margin-bottom: 22px;
+      padding: clamp(26px, 4vw, 46px);
+      background: var(--sheet);
+      border: 1px solid var(--line);
+      box-shadow: 0 8px 26px rgba(20, 35, 56, .045);
+    }
+    .section h2 {
+      margin: 0 0 22px;
+      font-size: clamp(28px, 4vw, 40px);
+      line-height: 1.08;
+      letter-spacing: -.025em;
+    }
+    .section h3 { margin: 26px 0 9px; font-size: 21px; line-height: 1.2; }
+    .section p, .section li { max-width: 76ch; }
+    .section p:first-of-type { margin-top: 0; }
+    .section ul, .section ol { padding-left: 22px; }
+    .section li { margin: 7px 0; }
+    .lead-paragraph { color: #33465c; font-size: 19px; line-height: 1.65; }
+
+    .status-note {
+      display: grid;
+      grid-template-columns: 6px 1fr;
+      gap: 15px;
+      margin: 24px 0;
+      padding: 18px 20px 18px 0;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+    }
+    .status-note::before { content: ""; background: var(--navy); }
+    .status-note.critical::before { background: var(--critical); }
+    .status-note.good::before { background: var(--good); }
+    .status-note p { margin: 0; }
+
+    .scope-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin: 24px 0;
+    }
+    .scope-grid article { padding: 18px 19px; background: #f8fafc; border-top: 3px solid var(--navy); }
+    .scope-grid h3 { margin: 0 0 8px; font-size: 17px; }
+    .scope-grid p { margin: 0; color: var(--muted); font: 14px/1.55 var(--sans); }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: -4px 0 22px;
+      font-family: var(--sans);
+    }
+    .filter-button {
+      padding: 8px 12px;
+      color: var(--muted);
+      background: #fff;
+      border: 1px solid var(--line-strong);
+      cursor: pointer;
+      font: 650 13px/1 var(--sans);
+    }
+    .filter-button:hover, .filter-button[aria-pressed="true"] { color: #fff; background: var(--navy); border-color: var(--navy); }
+
+    .register-wrap { overflow-x: auto; border: 1px solid var(--line); }
+    table { width: 100%; border-collapse: collapse; font-family: var(--sans); }
+    th, td { padding: 12px 13px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); background: #f4f7fa; font-size: 12px; font-weight: 720; }
+    td { font-size: 14px; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .finding-id { white-space: nowrap; color: var(--navy); font-family: var(--mono); font-size: 12px; }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 8px 4px;
+      border: 1px solid currentColor;
+      font: 720 11px/1 var(--sans);
+      white-space: nowrap;
+    }
+    .badge.critical { color: var(--critical); background: var(--critical-soft); }
+    .badge.high { color: var(--high); background: var(--high-soft); }
+    .badge.medium { color: var(--medium); background: var(--medium-soft); }
+    .badge.info { color: var(--info); background: var(--info-soft); }
+    .badge.good { color: var(--good); background: var(--good-soft); }
+
+    .finding {
+      margin-bottom: 22px;
+      background: var(--sheet);
+      border: 1px solid var(--line);
+      border-left: 7px solid var(--info);
+      box-shadow: 0 8px 26px rgba(20, 35, 56, .045);
+    }
+    .finding[data-severity="critical"] { border-left-color: var(--critical); }
+    .finding[data-severity="high"] { border-left-color: var(--high); }
+    .finding[data-severity="medium"] { border-left-color: var(--medium); }
+    .finding.is-hidden { display: none; }
+    .finding-head {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: start;
+      padding: 28px 34px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+    .finding-number { color: #8390a0; font: 700 13px/1.2 var(--mono); }
+    .finding h3 { margin: 0; font-size: clamp(23px, 3vw, 31px); line-height: 1.08; letter-spacing: -.02em; }
+    .finding-body { padding: 26px 34px 32px 144px; }
+    .finding-body p, .finding-body li { max-width: 76ch; }
+    .finding-body h4 { margin: 26px 0 8px; font-size: 16px; }
+    .finding-body h4:first-child { margin-top: 0; }
+    .finding-body ul, .finding-body ol { padding-left: 21px; }
+    .finding-body li { margin: 6px 0; }
+    code {
+      padding: .08em .32em;
+      color: #173b5e;
+      background: var(--code);
+      border-radius: 2px;
+      font: .9em/1.45 var(--mono);
+      overflow-wrap: anywhere;
+    }
+    .evidence {
+      margin: 18px 0 0;
+      padding: 15px 17px;
+      background: #f4f7fa;
+      border-left: 3px solid var(--blue);
+      color: #3b4c60;
+      font: 13px/1.6 var(--mono);
+      overflow-wrap: anywhere;
+    }
+    .evidence strong { font-family: var(--sans); }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0;
+      margin: 24px 0;
+      border: 1px solid var(--line-strong);
+    }
+    .flow > div { position: relative; min-height: 125px; padding: 19px 26px 18px 18px; border-right: 1px solid var(--line); }
+    .flow > div:last-child { border-right: 0; }
+    .flow > div:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      z-index: 1;
+      top: 50%;
+      right: -6px;
+      width: 11px;
+      height: 11px;
+      margin-top: -6px;
+      background: var(--sheet);
+      border-top: 1px solid var(--line-strong);
+      border-right: 1px solid var(--line-strong);
+      transform: rotate(45deg);
+    }
+    .flow strong { display: block; margin-bottom: 7px; font: 720 15px/1.2 var(--sans); }
+    .flow span { color: var(--muted); font: 13px/1.45 var(--sans); }
+
+    .timeline { margin: 24px 0 0; border-left: 2px solid var(--line-strong); }
+    .timeline article { position: relative; padding: 0 0 26px 28px; }
+    .timeline article:last-child { padding-bottom: 0; }
+    .timeline article::before {
+      content: "";
+      position: absolute;
+      top: 5px;
+      left: -7px;
+      width: 12px;
+      height: 12px;
+      background: var(--sheet);
+      border: 2px solid var(--navy);
+      border-radius: 50%;
+    }
+    .timeline h3 { margin: 0 0 7px; font-size: 19px; }
+    .timeline p { margin: 0; }
+
+    .two-column { columns: 2 300px; column-gap: 42px; }
+    .two-column li { break-inside: avoid; }
+
+    .sources li { overflow-wrap: anywhere; }
+    .document-note { color: var(--muted); font-size: 13px; font-family: var(--sans); }
+    footer {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      margin-top: 24px;
+      padding: 22px 4px;
+      color: var(--muted);
+      border-top: 1px solid var(--line-strong);
+      font: 12px/1.55 var(--sans);
+    }
+    footer code { color: inherit; background: transparent; padding: 0; }
+
+    @media (max-width: 960px) {
+      .case-header { grid-template-columns: 1fr; }
+      .verdict-panel { min-height: 210px; display: grid; grid-template-columns: 1fr 170px; gap: 24px; align-items: end; }
+      .layout { grid-template-columns: 1fr; }
+      .rail { position: relative; top: auto; }
+      .rail nav { display: grid; grid-template-columns: repeat(2, 1fr); }
+      .scope-grid { grid-template-columns: 1fr; }
+      .finding-body { padding-left: 34px; }
+    }
+
+    @media (max-width: 680px) {
+      html, body { max-width: 100%; overflow-x: hidden; }
+      .page { width: calc(100vw - 18px); max-width: calc(100vw - 18px); margin: 9px 9px 48px; }
+      .case-header, .case-copy, .verdict-panel, .risk-tally, .layout, main, .section, .finding { min-width: 0; max-width: 100%; }
+      .case-copy { width: calc(100vw - 18px); padding: 34px 22px 30px 30px; }
+      .case-code { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 8px; font-size: 12px; line-height: 1.35; }
+      .case-code::before { width: 24px; margin-top: 7px; }
+      h1 { font-size: 40px; line-height: 1.02; overflow-wrap: anywhere; }
+      .dek { width: calc(100vw - 70px); max-width: none; font-size: 17px; white-space: normal; overflow-wrap: anywhere; }
+      .case-meta { display: grid; grid-template-columns: minmax(0, 1fr); gap: 9px; }
+      .case-meta span, p, li, td { min-width: 0; overflow-wrap: anywhere; }
+      .verdict-panel { width: calc(100vw - 18px); grid-template-columns: 1fr; }
+      .risk-tally { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .risk-tally > div:nth-child(2) { border-right: 0; }
+      .risk-tally > div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+      .rail nav { grid-template-columns: 1fr; }
+      .section { padding: 26px 22px; }
+      .finding-head { grid-template-columns: 1fr; gap: 10px; padding: 24px 22px; }
+      .finding-body { padding: 23px 22px 28px; }
+      .flow { grid-template-columns: 1fr; }
+      .flow > div { min-height: 0; border-right: 0; border-bottom: 1px solid var(--line); }
+      .flow > div:last-child { border-bottom: 0; }
+      .flow > div:not(:last-child)::after { display: none; }
+      footer { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    @media print {
+      @page { size: A4; margin: 14mm; }
+      body { background: #fff; color: #000; font-size: 10.5pt; }
+      .page { width: 100%; margin: 0; }
+      .case-header, .risk-tally, .section, .finding { box-shadow: none; }
+      .case-header { min-height: 0; grid-template-columns: 1fr 170px; }
+      .case-copy { padding: 28px 30px 24px 36px; }
+      h1 { font-size: 36pt; }
+      .verdict-value { font-size: 31pt; }
+      .print-button, .filters, .rail { display: none !important; }
+      .layout { display: block; }
+      .section, .finding { break-inside: avoid-page; }
+      .finding-body { padding-left: 34px; }
+      .finding.is-hidden { display: block; }
+      a { color: #000; text-decoration: none; }
+      footer { break-before: page; }
+    }
+  </style>
 </head>
 <body>
-<div class="page">
-<header class="masthead">
-<button class="print" onclick="window.print()">Yazdır / PDF</button>
-<div class="kicker">Statik istemci incelemesi · 3 Eylül 2026</div>
-<h1>Prescripto: Medula, KVKK ve Güncelleme Güvenliği İncelemesi</h1>
-<p class="lead">Bu çalışma, kullanıcı tarafından sağlanan Windows istemci dosyalarının statik analizine dayanır. Yalnızca doğrulanabilen teknik bulgular raporlanmıştır. Gerçekleşmiş veri sızıntısı, kötü amaçlı yazılım, kesin KVKK ihlali veya SGK kurallarına aykırılık gibi kanıtlanamayan sonuçlar ileri sürülmemektedir.</p>
-<div class="meta"><span>Kapsam: prescripto.exe, prescripto_app.exe, safe_updater.exe</span><span>Medula login/session</span><span>KVKK veri temizleme</span><span>Supabase/AI akışı</span><span>Updater ve runtime</span></div>
-</header>
-<div class="summary"><div><span class="label">Genel teknik risk</span><strong class="critical">Yüksek</strong></div><div><span class="label">Malware bulgusu</span><strong class="good">Tespit edilmedi</strong></div><div><span class="label">İnceleme sınırı</span><strong>Statik istemci analizi</strong></div></div>
-<div class="body">
-<nav class="toc"><b>İçindekiler</b><a href="#ozet">Yönetici özeti</a><a href="#medula">Medula ve CAPTCHA</a><a href="#parola">Şifre güvenliği</a><a href="#kvkk">KVKK / sağlık verisi</a><a href="#bulut">Bulut ve AI</a><a href="#tls">TLS</a><a href="#update">Güncelleme sistemi</a><a href="#runtime">Runtime sürümleri</a><a href="#risk">Risk matrisi</a><a href="#sinir">Kanıt sınırları</a><a href="#sonuc">Sonuç</a><a href="#kaynak">Kaynaklar</a></nav>
-<main>
-<section id="ozet"><h2>Yönetici özeti</h2><p>İncelenen sürümde kötü amaçlı yazılım davranışı tespit edilmedi. Buna karşılık sağlık verisi ve Medula hesabı kullanan bir istemci için önemli güvenlik eksikleri doğrulandı.</p><div class="note risk-high"><span class="tag">Doğrulandı:</span> Bazı Supabase istemci yollarında <code>check_hostname = False</code> ve <code>verify_mode = CERT_NONE</code> kullanılıyor.</div><div class="note risk-high"><span class="tag">Doğrulandı:</span> Medula kullanıcı adı/parolası için kullanılan PENC2 mekanizması <code>zlib → XOR → Base64</code> yapısında ve geri döndürülebilir.</div><div class="note risk-high"><span class="tag">Doğrulandı:</span> İncelenen üç Prescripto executable dosyasında Authenticode yayıncı imzası yok.</div><div class="note risk-good"><span class="tag">Olumlu:</span> Updater SHA-256 doğrulaması, ZIP path kontrolleri ve rollback içeriyor; ayrıca KVKK tanımlayıcı temizleme modülü var.</div></section>
-<section id="medula"><h2>Medula oturumu ve Güvenlik Anahtarı</h2><p>Ana uygulamada Medula için HTTP login/session bileşenleri bulunuyor. Uygulama kullanıcı adı/parola ile Medula oturumunu yönetebiliyor; reçete, ilaç geçmişi, rapor ve tanı sayfalarını parse edebilecek kod içeriyor.</p><h3>CAPTCHA / Güvenlik Anahtarı</h3><p>Medula girişindeki Güvenlik Anahtarı görselinin <code>ddddocr</code> ile yerelde OCR edilmesi, sonucun altı haneli forma dönüştürülmesi ve login formuna otomatik yazılması için kod mevcut. OCR başarısız olursa manuel giriş fallback'i var.</p><pre>Medula giriş sayfası
-  → Güvenlik Anahtarı görseli
-  → ddddocr.classification()
-  → 6 haneli değere normalize et
-  → kullanıcı adı + parola + güvenlik anahtarı
-  → form submit</pre><p><strong>Kanıt sınırı:</strong> Bu davranışın SGK tarafından yasaklandığı veya onaylandığı bu incelemeden çıkarılamaz. TEBEOS Plus ve EczacıKart gibi yerleşik ürünlerin de Medula entegrasyonları bulunduğundan, doğru soru SGK'nın üçüncü taraf otomasyonlar için hangi teknik yetkilendirme/protokol prosedürünü uyguladığıdır.</p></section>
-<section id="parola"><h2>Medula şifresi ve credential saklama</h2><p>Kodda <code>medula_username</code> ve <code>medula_password</code> değerlerini yerel ayar dosyasında saklayıp otomatik login sırasında tekrar kullanma mekanizması var.</p><pre>JSON → zlib → XOR → Base64 → PENC2|KID|...</pre><p>Statik incelemede Windows DPAPI (<code>CryptProtectData</code>) veya Windows Credential Manager kullanımına rastlanmadı. İncelenen örnek ayar dosyasında gerçek Medula kullanıcı adı ve parola alanları boştu; dolayısıyla gerçek bir Medula parolası elde edilmedi.</p><div class="note risk-high"><span class="tag">Risk:</span> İşletim sistemine/kullanıcı hesabına bağlı bir credential kasasına göre daha zayıf yerel koruma.</div></section>
-<section id="kvkk"><h2>KVKK ve sağlık verisi</h2><p>Programda <code>kvkkremover</code> adlı bir temizleme katmanı var. TC kimlik numarası, kişi/doktor isimleri ve bazı reçete/rapor tanımlayıcılarını kaldırmaya yönelik kod doğrulandı.</p><p>Buna karşılık AI işleme verisinde şu sağlık bağlamları bulunabiliyor:</p><ul><li>doğum tarihi ve cinsiyet,</li><li>tanılar / ICD bilgileri,</li><li>reçete ve ilaç geçmişi,</li><li>mevcut ve geçmiş raporlar,</li><li>rapor açıklamaları ve rapor tanıları,</li><li>doz/tedavi bilgileri,</li><li>doktor branşı ve tesis bilgileri.</li></ul><p>Bu nedenle doğrudan tanımlayıcıların azaltıldığı söylenebilir; ancak verinin tamamen ve geri döndürülemez biçimde anonimleştirildiği bu analizle kanıtlanamaz.</p></section>
-<section id="bulut"><h2>Harici bulut ve AI veri akışı</h2><p>İstemci kodunda <code>cwxdyyqmudepptmnamoo.supabase.co</code> projesine yönelik bağlantılar doğrulandı. AI/SUT işleme ve Storage yükleme fonksiyonları arasında şu yollar bulunuyor:</p><pre>/functions/v1/ai-sut-check
-/storage/v1/object/debug/...
-/storage/v1/object/receteler/...</pre><p>Dolayısıyla belirli iş akışlarında eczane bilgisayarında işlenen verinin harici Supabase altyapısına gönderilebildiği kanıtlanmıştır.</p><div class="note"><span class="tag">Kanıtlanmadı:</span> Projenin fiziksel region'ı, verinin hangi ülkede tutulduğu, alt veri işleyenler, AI sağlayıcısının retention politikası veya kullanılan KVKK yurt dışı aktarım mekanizması.</div><p>Supabase'in kamuya açık hosted region listesinde Türkiye bulunmaması, bu projenin hangi bölgede olduğunu tek başına kanıtlamaz. Bunun için sağlayıcıdan proje region'ı ve veri aktarım belgeleri istenmelidir.</p></section>
-<section id="tls"><h2>TLS / HTTPS güvenliği</h2><div class="note risk-high"><span class="tag">Doğrulandı:</span> Bir SSL context yolunda <code>check_hostname = False</code> ve <code>verify_mode = CERT_NONE</code> kullanılıyor.</div><p>Bu, bağlantı şifrelemesini tamamen ortadan kaldırmaz; ancak sunucu sertifikasının ve hostname'in doğrulanmasını devre dışı bıraktığı için karşı taraf kimlik doğrulamasını zayıflatır.</p><p>Ayrıca SSL doğrulaması kapalı doğrudan OpenAI uyumlu istemci yolu bulundu; ancak tüm normal production AI çağrılarının bu yolu kullandığı kanıtlanmadı. Yeni varsayılan akışta Supabase Edge Function <code>ai-sut-check</code> kullanımına ilişkin kod da mevcut.</p></section>
-<section id="update"><h2>Güncelleme sistemi</h2><h3>Güçlü yönler</h3><ul><li>Belirli HTTPS Supabase Storage yoluyla sınırlı indirme.</li><li><code>update_manifest.json</code> zorunluluğu.</li><li>Dosya boyutu ve SHA-256 doğrulaması.</li><li>Manifest dışı dosyaları reddetme.</li><li>ZIP path traversal, symlink ve reparse-point kontrolleri.</li><li>Transactional backup ve rollback.</li></ul><h3>Eksikler</h3><ul><li>Updater executable'ında Authenticode yayıncı imzası yok.</li><li>Manifest için Ed25519/RSA/ECDSA gibi yayıncı imzası tespit edilmedi.</li></ul><p>SHA-256 doğrulaması paketin kendi manifestiyle tutarlı olup olmadığını denetler; manifestin gerçekten yayıncı tarafından üretildiğini tek başına doğrulamaz.</p></section>
-<section id="runtime"><h2>Runtime ve bağımlılık güncelliği</h2><table><thead><tr><th>Bileşen</th><th>İncelenen sürüm</th><th>Not</th></tr></thead><tbody><tr><td>Python</td><td>3.12.0</td><td>2023 çekirdeği</td></tr><tr><td>OpenSSL</td><td>3.0.11</td><td>2023 crypto/TLS katmanı</td></tr><tr><td>SQLite</td><td>3.42.0</td><td>2023</td></tr><tr><td>Expat</td><td>2.5.0</td><td>Eski XML parser</td></tr></tbody></table><p>Bu bileşenlerin 2026 güvenlik/bakım seviyelerinin gerisinde olduğu doğrulandı. Bu, ilgili sürümlerin Prescripto üzerinde fiilen exploit edilebildiğini kanıtlamaz.</p></section>
-<section id="risk"><h2>Risk matrisi</h2><table><thead><tr><th>Bulgu</th><th>Risk</th><th>Kanıt</th></tr></thead><tbody><tr><td>TLS certificate/hostname doğrulamasının kapalı olduğu kod yolu</td><td class="critical"><strong>Çok yüksek</strong></td><td>Doğrulandı</td></tr><tr><td>PENC2/XOR credential saklama</td><td class="critical"><strong>Yüksek</strong></td><td>Doğrulandı</td></tr><tr><td>Prescripto EXE'lerinin Authenticode imzasız olması</td><td class="critical"><strong>Yüksek</strong></td><td>Doğrulandı</td></tr><tr><td>Update manifestinde publisher signature bulunmaması</td><td class="critical"><strong>Yüksek</strong></td><td>Doğrulandı</td></tr><tr><td>Eski security-sensitive runtime</td><td class="warn"><strong>Orta-yüksek</strong></td><td>Doğrulandı</td></tr><tr><td>Ayrıntılı sağlık bağlamının AI payload'ında bulunabilmesi</td><td class="critical"><strong>Yüksek önem</strong></td><td>Doğrulandı</td></tr><tr><td>Updater SHA-256 / rollback / ZIP kontrolleri</td><td class="good"><strong>Olumlu</strong></td><td>Doğrulandı</td></tr><tr><td>KVKK scrubber</td><td class="good"><strong>Olumlu</strong></td><td>Doğrulandı</td></tr></tbody></table></section>
-<section id="sinir"><h2>Kanıt sınırları</h2><p>Bu inceleme aşağıdaki sonuçları ileri sürmez:</p><ul><li>Programın kötü amaçlı yazılım olduğu.</li><li>Hasta verisinin gerçekten sızdırıldığı.</li><li>Firmanın sağlık verisine yetkisiz eriştiği.</li><li>Supabase RLS politikalarının hatalı olduğu.</li><li>Verilerin kesin olarak hangi ülkede tutulduğu.</li><li>Yurt dışı aktarımının hukuka aykırı olduğu.</li><li>SGK'nın CAPTCHA/session otomasyonunu yasakladığı veya onayladığı.</li><li>Eski runtime bileşenlerinin fiilen exploit edildiği.</li></ul></section>
-<section id="sonuc" class="verdict"><h2>Sonuç</h2><p>İncelenen sürümde kötü amaçlı yazılım bulgusu tespit edilmedi. Bununla birlikte Medula hesabı ve özel nitelikli sağlık verisi işleyen bir eczane uygulaması için kritik güvenlik eksikleri doğrulandı: TLS sunucu doğrulamasını kapatan kod yolları, geri döndürülebilir credential saklama, dijital imzasız executable/update zinciri ve eski security-sensitive runtime bileşenleri.</p><p><strong>Teknik karar:</strong> P0 düzeyindeki TLS, credential storage, code-signing, signed-update ve dependency güncelleme sorunları giderilene kadar ana eczane/Medula terminalinde kullanım için risk seviyesi <span class="critical">Yüksek</span>.</p></section>
-<section id="kaynak" class="sources"><h2>Resmî ve upstream kaynaklar</h2><ul><li><a href="https://www.kvkk.gov.tr/Icerik/4110/2018-10">KVKK — Özel Nitelikli Kişisel Verilerde Yeterli Önlemler (2018/10)</a></li><li><a href="https://www.kvkk.gov.tr/Icerik/2040/Veri-Guvenligine-Iliskin-Yukumlulukler">KVKK — Veri Güvenliğine İlişkin Yükümlülükler</a></li><li><a href="https://www.kvkk.gov.tr/Icerik/7929/Standart-Sozlesmeler">KVKK — Yurt dışına aktarım / standart sözleşmeler</a></li><li><a href="https://medeczane.sgk.gov.tr/eczane/">SGK — Medula Eczane</a></li><li><a href="https://supabase.com/docs/guides/platform/regions">Supabase — Regions</a></li><li><a href="https://blog.python.org/2026/08/python-31214-31116-31021/">Python — 3.12.14 security release</a></li><li><a href="https://mirror.openssl-library.org/news/openssl-3.0-notes/">OpenSSL — 3.0 security/release notes</a></li><li><a href="https://sqlite.org/changes.html">SQLite — Release history</a></li></ul></section>
-</main>
-</div>
-<div class="foot">İnceleme bir penetrasyon testi değildir. Sunucu kaynak kodu, Supabase RLS politikaları, gerçek runtime trafiği, firma içi yetkilendirmeler ve sözleşmesel veri aktarım belgeleri incelenmemiştir.</div>
-</div>
-</body></html>
+  <a class="skip-link" href="#main">Rapora geç</a>
+  <div class="page">
+    <header class="case-header">
+      <div class="case-copy">
+        <div class="case-code">Teknik güvenlik dosyası · PSR-2026-09</div>
+        <h1>Prescripto güvenlik analizi</h1>
+        <p class="dek">1.5.1 kurulumundan 1.5.9 güncellemesine uzanan Windows istemcisinin; MEDULA oturumu, yerel ağ servisi, credential saklama, AI veri akışı ve güncelleme zinciri incelemesi.</p>
+        <div class="case-meta">
+          <span>Rapor tarihi: 4 Eylül 2026</span>
+          <span>Statik + kontrollü dinamik analiz</span>
+          <span>Gerçek hasta verisi kullanılmadı</span>
+        </div>
+      </div>
+      <aside class="verdict-panel" aria-label="Genel teknik karar">
+        <div>
+          <span class="verdict-label">Genel teknik risk</span>
+          <strong class="verdict-value">Yüksek</strong>
+          <p class="verdict-note">Kritik taşıma katmanı ve erişim kontrolü sorunları giderilmeden ana MEDULA terminalinde kullanım yüksek risk taşır.</p>
+        </div>
+        <button class="print-button" type="button" onclick="window.print()">Yazdır veya PDF al</button>
+      </aside>
+    </header>
+
+    <section class="risk-tally" aria-label="Bulgu sayıları">
+      <div class="critical"><span class="tally-number">2</span><span class="tally-name">Kritik bulgu</span></div>
+      <div class="high"><span class="tally-number">4</span><span class="tally-name">Yüksek bulgu</span></div>
+      <div class="medium"><span class="tally-number">2</span><span class="tally-name">Orta bulgu</span></div>
+      <div class="info"><span class="tally-number">2</span><span class="tally-name">Bilgilendirme</span></div>
+    </section>
+
+    <div class="layout">
+      <aside class="rail" aria-label="Rapor içindekiler">
+        <div class="rail-head">
+          <h2 class="rail-title">Dosya indeksi</h2>
+          <p class="rail-sub">Bölüme gitmek için seçin</p>
+        </div>
+        <nav>
+          <a href="#ozet"><span>01</span><span>Yönetici özeti</span></a>
+          <a href="#kapsam"><span>02</span><span>Kapsam ve yöntem</span></a>
+          <a href="#kayit"><span>03</span><span>Risk kaydı</span></a>
+          <a href="#bulgular"><span>04</span><span>Teknik bulgular</span></a>
+          <a href="#akis"><span>05</span><span>Oturum ve veri akışı</span></a>
+          <a href="#olumlu"><span>06</span><span>Olumlu kontroller</span></a>
+          <a href="#plan"><span>07</span><span>Düzeltme planı</span></a>
+          <a href="#sinirlar"><span>08</span><span>Kanıt sınırları</span></a>
+          <a href="#kaynaklar"><span>09</span><span>Kaynaklar</span></a>
+        </nav>
+        <div class="rail-legend">
+          <p>Öncelik göstergesi</p>
+          <div class="legend-row">
+            <span class="badge critical">Kritik</span>
+            <span class="badge high">Yüksek</span>
+            <span class="badge medium">Orta</span>
+            <span class="badge info">Bilgi</span>
+          </div>
+        </div>
+      </aside>
+
+      <main id="main">
+        <section class="section" id="ozet">
+          <h2>Yönetici özeti</h2>
+          <p class="lead-paragraph">İncelenen dosyalarda kötü amaçlı yazılım veya klasik kalıcılık davranışı tespit edilmedi. Buna karşılık sağlık ve kimlik verileriyle çalışan bir istemci için kabul edilemeyecek taşıma güvenliği, erişim kontrolü, sır saklama ve yazılım tedarik zinciri zayıflıkları doğrulandı.</p>
+          <div class="status-note critical"><p><strong>En acil konu:</strong> MEDULA ve Supabase bağlantılarında sunucu sertifikasının doğrulanmaması, ağdaki bir saldırganın güvenilir sunucu gibi davranabilmesine yol açıyor.</p></div>
+          <div class="status-note"><p><strong>Kanıt disiplini:</strong> AI isteğinde ham kayıt alanı bulundu; ancak gerçek Edge gövdesi yakalanamadığı için “hasta verisi kesin sızdırıldı” sonucu çıkarılmadı.</p></div>
+          <div class="status-note good"><p><strong>Olumlu taraf:</strong> Updater'ın yol, boyut, SHA-256, reparse-point ve rollback kontrolleri güçlü. Ayrı kampanya terminali bileşeninde güvenli eşleştirme için kullanılabilecek TLS pinning ve HMAC tasarımı mevcut.</p></div>
+        </section>
+
+        <section class="section" id="kapsam">
+          <h2>Kapsam ve yöntem</h2>
+          <div class="scope-grid">
+            <article><h3>İncelenen yazılım</h3><p>Inno Setup 6.7.0, PyInstaller, Python 3.12, PySide6/QML ve QtWebEngine tabanlı Windows istemcisi.</p></article>
+            <article><h3>Laboratuvar</h3><p>Windows 11 x64 VMware, NAT ağ, sentetik kimlik bilgileri ve yalnızca loopback üzerinde sahte servisler.</p></article>
+            <article><h3>Yasaklanan alan</h3><p>Gerçek hasta verisi, gerçek MEDULA hesabı ve üçüncü taraf üretim sistemlerine aktif güvenlik testi kullanılmadı.</p></article>
+          </div>
+          <h3>İncelenen temel hash'ler</h3>
+          <div class="register-wrap">
+            <table>
+              <thead><tr><th>Artefakt</th><th>SHA-256</th></tr></thead>
+              <tbody>
+                <tr><td>Orijinal kurulum.exe</td><td><code>5911550fa833fc8297d304047bda8996c7a57af0526996ceda9f491615b21df5</code></td></tr>
+                <tr><td>1.5.1 prescripto.exe</td><td><code>921bffa1f5b8ce277a0c027b786833089ddb871d859e6185f172b72c7777425c</code></td></tr>
+                <tr><td>1.5.1 prescripto_app.exe</td><td><code>4a54827fc3dfe8e18a07be681f4371f2f30fb32eade48881dd5e585d42d9dd00</code></td></tr>
+                <tr><td>1.5.9 prescripto.exe</td><td><code>e6ac7997807550914ef62c623e12ac4fd3430e11b909a6ec3f58470724cb1b74</code></td></tr>
+                <tr><td>1.5.9 prescripto_app.exe</td><td><code>b81fb224f507ab9e4f9e52fe512a71e21f76310d9d68e3aa2189577e2ce9a304</code></td></tr>
+                <tr><td>safe_updater.exe</td><td><code>84618ec3f00c40b76163b6b5992875cf5e533228180dc728545e8d68befe7f9a</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="document-note">Rapor yalnızca incelenen binary'ler, disassembly çıktıları, kontrollü laboratuvar kayıtları ve açıkça belirtilen resmî/upstream kaynaklara dayanır.</p>
+        </section>
+
+        <section class="section" id="kayit">
+          <h2>Risk kaydı</h2>
+          <div class="filters" aria-label="Bulguları önceliğe göre filtrele">
+            <button type="button" class="filter-button" data-filter="all" aria-pressed="true">Tümü</button>
+            <button type="button" class="filter-button" data-filter="critical" aria-pressed="false">Kritik</button>
+            <button type="button" class="filter-button" data-filter="high" aria-pressed="false">Yüksek</button>
+            <button type="button" class="filter-button" data-filter="medium" aria-pressed="false">Orta</button>
+            <button type="button" class="filter-button" data-filter="info" aria-pressed="false">Bilgi</button>
+          </div>
+          <div class="register-wrap">
+            <table>
+              <thead><tr><th>Kimlik</th><th>Bulgu</th><th>Öncelik</th><th>Kanıt</th></tr></thead>
+              <tbody>
+                <tr data-register-severity="critical"><td class="finding-id">PRES-01</td><td>MEDULA TLS sertifika doğrulamasının kapalı olması</td><td><span class="badge critical">Kritik</span></td><td>Statik + dinamik</td></tr>
+                <tr data-register-severity="critical"><td class="finding-id">PRES-02</td><td>Supabase lisans/SUT kanalında CERT_NONE ve sahte lisans kabulü</td><td><span class="badge critical">Kritik</span></td><td>Statik + dinamik</td></tr>
+                <tr data-register-severity="high"><td class="finding-id">PRES-03</td><td>Kimlik doğrulamasız yerel ağ API'si</td><td><span class="badge high">Yüksek</span></td><td>Statik + dinamik</td></tr>
+                <tr data-register-severity="high"><td class="finding-id">PRES-04</td><td>MEDULA bilgilerinin sabit anahtarlı XOR ile saklanması</td><td><span class="badge high">Yüksek</span></td><td>Statik + sentetik PoC</td></tr>
+                <tr data-register-severity="high"><td class="finding-id">PRES-05</td><td>İmzasız otomatik güncelleme zinciri</td><td><span class="badge high">Yüksek</span></td><td>Statik + dinamik</td></tr>
+                <tr data-register-severity="high"><td class="finding-id">PRES-06</td><td>AI yükünde ham kayıt ve güvensiz TLS fallback riski</td><td><span class="badge high">Yüksek / koşullu</span></td><td>Statik; gerçek gövde yok</td></tr>
+                <tr data-register-severity="medium"><td class="finding-id">PRES-07</td><td>Binary'ye gömülü sabit geliştirici parolası</td><td><span class="badge medium">Orta</span></td><td>Statik</td></tr>
+                <tr data-register-severity="info"><td class="finding-id">PRES-08</td><td>Telegram bildirimlerinin vendor relay üzerinden geçmesi</td><td><span class="badge info">Bilgi</span></td><td>Statik; özellik kapalı</td></tr>
+                <tr data-register-severity="info"><td class="finding-id">PRES-09</td><td>Build yolu ve gizleme attribute'ları</td><td><span class="badge info">Bilgi</span></td><td>Statik</td></tr>
+                <tr data-register-severity="medium"><td class="finding-id">PRES-10</td><td>Güncel olmayan güvenlik-hassas runtime bileşenleri</td><td><span class="badge medium">Orta</span></td><td>Statik + upstream</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <div id="bulgular" aria-label="Teknik bulgular">
+          <article class="finding" id="pres-01" data-severity="critical">
+            <header class="finding-head"><span class="finding-number">PRES-01</span><h3>MEDULA TLS doğrulaması kapalı</h3><span class="badge critical">Kritik</span></header>
+            <div class="finding-body">
+              <h4>Ne bulundu?</h4>
+              <p>MEDULA oturum, CAPTCHA ve kullanıcı adı/parola POST isteklerinde <code>verify=False</code> kullanılıyor; güvenlik uyarıları bastırılıyor. Sertifikası doğrulanmayan giriş sayfasındaki form hedefinin MEDULA origin'iyle eşleşmesini zorunlu kılan kontrol de görülmedi.</p>
+              <h4>Dinamik doğrulama</h4>
+              <p>MEDULA alanları yalnızca VM içindeki <code>127.0.0.1</code> adresine yönlendirildi. Güven deposuna eklenmemiş self-signed sertifika ile 5 denemenin 5'inde uygulamaya ait başarılı TLS 1.2 el sıkışması elde edildi.</p>
+              <h4>Olası etki</h4>
+              <ul><li>MEDULA kullanıcı adı, parola ve oturum cookie'lerinin ele geçirilmesi.</li><li>Reçete yanıtlarının ağ üzerinde değiştirilmesi.</li><li>Giriş formunun saldırgan kontrollü farklı bir HTTPS hedefine yönlendirilmesi.</li></ul>
+              <h4>Düzeltme</h4>
+              <ol><li>Bütün MEDULA istemcilerinde sistem güven deposu ve hostname doğrulamasını açın.</li><li>Redirect ve form hedeflerini sabit HTTPS origin allowlist'iyle doğrulayın.</li><li>TLS hatasında fail-closed davranın; güvensiz fallback kullanmayın.</li></ol>
+              <div class="evidence"><strong>Kanıt:</strong> medula_http_session.dis.txt · medula_http_login.dis.txt · tls-verify-20260903-224941.zip · Verdict=TlsVerificationDisabled</div>
+            </div>
+          </article>
+
+          <article class="finding" id="pres-02" data-severity="critical">
+            <header class="finding-head"><span class="finding-number">PRES-02</span><h3>Supabase kanalında CERT_NONE ve sahte lisans kabulü</h3><span class="badge critical">Kritik</span></header>
+            <div class="finding-body">
+              <h4>Ne bulundu?</h4>
+              <p>Lisans, kontör, sunucu zamanı ve SUT payload istekleri <code>check_hostname=False</code> ve <code>CERT_NONE</code> kullanan SSL context üzerinden yapılabiliyor. Lisans yanıtı bağımsız yayıncı imzasıyla doğrulanmıyor.</p>
+              <h4>Dinamik doğrulama</h4>
+              <p>Sahte Supabase ucu yalnızca loopback üzerinde çalıştırıldı. Uygulama güvenilmeyen sertifikayı kabul ederek 20 istek gönderdi; 2099 bitiş tarihli ve 1000 kontörlü sentetik lisansı kabul edip giriş-sonrası RPC'lere geçti.</p>
+              <h4>Olası etki</h4>
+              <ul><li>Lisans ve kontör denetiminin ağ saldırganınca değiştirilmesi.</li><li>SUT/kural payload'ı değiştirilebiliyorsa reçete karar bütünlüğünün bozulması.</li><li>MEDULA kimliği ve tanı/debug verisinin açığa çıkması.</li></ul>
+              <h4>Düzeltme</h4>
+              <ol><li>Tüm Supabase istemcilerinde TLS/hostname doğrulamasını zorunlu kılın.</li><li>Klinik kural paketlerini sürümleyip üretici imzasıyla doğrulayın.</li><li>Anon rolün erişebildiği RPC/RLS yüzeylerini en az yetkiyle yeniden tasarlayın.</li></ol>
+              <div class="evidence"><strong>Kanıt:</strong> licensing.dis.txt · edge-capture-20260904-070524.zip · 20 loopback isteği · sentetik lisans kabulü</div>
+            </div>
+          </article>
+
+          <article class="finding" id="pres-03" data-severity="high">
+            <header class="finding-head"><span class="finding-number">PRES-03</span><h3>Kimlik doğrulamasız yerel ağ API'si</h3><span class="badge high">Yüksek</span></header>
+            <div class="finding-body">
+              <p>“ANA PRESCRIPTO” rolü <code>0.0.0.0:52413</code> üzerinde düz HTTP dinliyor; UDP/52414 ile <code>PRESCRIPTO_DISCOVER</code> keşfi yapıyor. Uygulama katmanında eşleştirme, token, HMAC veya istemci doğrulaması yok ve yanıtlar <code>Access-Control-Allow-Origin: *</code> içeriyor.</p>
+              <h4>Korumasız yüzey</h4>
+              <p><code>/snapshot</code>, <code>/recete_status</code>, <code>/recete_check</code>, <code>/genel_hatali</code>, <code>/canli_takip</code>, <code>/campaign/details</code>, <code>/ping</code> ve durum değiştiren <code>POST /set_note</code>.</p>
+              <h4>Dinamik doğrulama</h4>
+              <p>Host makineden guest'e TCP bağlantısı başarılı oldu. <code>/ping</code> ve <code>/snapshot/hash</code> kimlik doğrulamasız HTTP 200; CORS preflight 204 döndürdü. Gerçek reçete okunmadı ve durum değiştiren POST gönderilmedi.</p>
+              <h4>Düzeltme</h4>
+              <ol><li>Listener'ı varsayılan olarak loopback'e bağlayın.</li><li>Üründeki mevcut TLS fingerprint pinning + HMAC pairing tasarımını bu kanala taşıyın.</li><li>Okuma/yazma yetkilerini ayırın; CORS <code>*</code> kullanımını kaldırın.</li></ol>
+              <div class="evidence"><strong>Kanıt:</strong> lan-api-20260903-221114.zip · Tcp52413Listening=True · host-to-guest HTTP 200 · cache_server SHA-256 iki sürümde aynı</div>
+            </div>
+          </article>
+
+          <article class="finding" id="pres-04" data-severity="high">
+            <header class="finding-head"><span class="finding-number">PRES-04</span><h3>MEDULA sırları sabit anahtarlı XOR ile korunuyor</h3><span class="badge high">Yüksek</span></header>
+            <div class="finding-body">
+              <p>PENC2 ayarı <code>JSON → zlib → XOR → Base64</code> zinciriyle saklanıyor. Ortam değişkeni verilmezse XOR anahtarı bütün kurulumlarda aynı binary literalinden SHA-256 ile türetiliyor. Sıkıştırma ve Base64 şifreleme değildir.</p>
+              <p>VM'de yalnızca sentetik kullanıcı adı/parola kaydedildi. Dağıtılan binary'den çıkarılan varsayılan anahtarla dosya çözüldü ve iki değer sentetik girdilerle eşleşti; gerçek sır veya ham ayar hosta çıkarılmadı.</p>
+              <h4>Düzeltme</h4>
+              <ol><li>Windows Credential Manager veya kullanıcı/makine kapsamlı DPAPI kullanın.</li><li>Eski PENC kayıtlarını güvenli depoya taşıyıp eski dosyaları silin.</li><li>Korumayı ortam değişkeniyle kapatma seçeneğini üretimden kaldırın.</li></ol>
+              <div class="evidence"><strong>Kanıt:</strong> credential-poc-20260903-221522.zip · DecodeWithBinaryDefaultKey=True · sentetik username/password eşleşmesi</div>
+            </div>
+          </article>
+
+          <article class="finding" id="pres-05" data-severity="high">
+            <header class="finding-head"><span class="finding-number">PRES-05</span><h3>İmzasız otomatik güncelleme zinciri</h3><span class="badge high">Yüksek</span></header>
+            <div class="finding-body">
+              <p>Updater; SHA-256, boyut, path traversal, zip-slip, symlink, reparse-point ve manifest dışı dosya kontrolleri ile rollback kullanıyor. Buna rağmen üç EXE de Authenticode açısından <code>NotSigned</code>; manifestte bağımsız yayıncı imzası yok.</p>
+              <p>Hash manifesti paket içi bütünlüğü doğrular; manifest ve payload aynı yayın alanından geldiği için yayın hesabı ele geçirilirse saldırgan ikisini birlikte değiştirebilir. Dinamik kayıtta istemci imzasız 1.5.9 binary'lerini otomatik uyguladı.</p>
+              <h4>Düzeltme</h4>
+              <ol><li>Tüm PE dosyalarını Authenticode ile imzalayın.</li><li>Manifesti ayrı, çevrimdışı Ed25519/ECDSA anahtarıyla imzalayın.</li><li>İmza doğrulanmadan staging'den kurulum alanına dosya taşımayın.</li></ol>
+              <div class="evidence"><strong>Kanıt:</strong> install-20260903-205223.zip · updated-binaries-20260903-210208.zip · 1.5.1 → 1.5.9 otomatik geçiş</div>
+            </div>
+          </article>
+
+          <article class="finding" id="pres-06" data-severity="high">
+            <header class="finding-head"><span class="finding-number">PRES-06</span><h3>AI yükünde ham kayıt ve güvensiz TLS fallback</h3><span class="badge high">Yüksek / koşullu</span></header>
+            <div class="finding-body">
+              <p>Varsayılan AI yolu Supabase Edge Function'ın 1.5.9'daki v5/v6 kod yüzeyini kullanıyor. Gövde; MEDULA kimliği, barkod/ATC, maskelenmiş <code>ai_payload</code>, ayrı ham <code>record_payload</code>, SUT metinleri ve model ayarlarını içerebiliyor.</p>
+              <p>Formatter; bazı PII anahtarlarını silip 11 haneli sayıları maskeliyor. Ancak serbest metindeki isimleri güvenilir biçimde yakalamıyor ve ağ sınırında ham <code>record_payload</code> için aynı koruma uygulanmıyor. SSL hatasında aynı gövdeyi <code>verify=False</code> ile yeniden gönderen fallback de mevcut.</p>
+              <p>Doğum tarihi, cinsiyet, tanı/ICD, ilaç geçmişi, rapor, doz, doktor branşı ve tesis gibi sağlık bağlamları formatter/kural kodunda işleniyor. Bunların tamamının her istekte yer aldığı ileri sürülmüyor.</p>
+              <div class="status-note"><p><strong>Kanıt sınırı:</strong> Loopback testinde Edge isteği tetiklenmedi. Bu nedenle gerçek reçetedeki TC/ad alanlarının dış servise ham gönderildiği veya gerçekleşmiş veri sızıntısı olduğu iddia edilmemektedir.</p></div>
+              <p>İstemcide debug ve <code>receteler</code> Storage yükleme fonksiyonları var. Debug opt-in görünürken reçete logu yükleme fonksiyonu için aktif çağrı sitesi bulunmadı.</p>
+              <h4>Düzeltme</h4>
+              <ol><li>Ham <code>record_payload</code> gönderimini kaldırıp allowlist şema kullanın.</li><li>Maskelemeyi son ağ serileştirme adımında yeniden uygulayın.</li><li>TLS hatasında fail-closed davranın ve PII canary regresyon testi ekleyin.</li></ol>
+              <div class="evidence"><strong>Kanıt:</strong> AIQueryEngine.dis.txt · json_ai_formatter.dis.txt · server_sut.dis.txt · EdgeRequestsCaptured=0</div>
+            </div>
+          </article>
+
+          <article class="finding" id="pres-07" data-severity="medium">
+            <header class="finding-head"><span class="finding-number">PRES-07</span><h3>Sabit geliştirici parolası binary içinde</h3><span class="badge medium">Orta</span></header>
+            <div class="finding-body">
+              <p>Geliştirici ayarlarını açan dört karakterli düz metin parola bütün kurulumlarda aynı biçimde binary'ye gömülü. Parola bu paylaşılabilir raporda bilerek yayımlanmıyor.</p>
+              <p>Bu kilit AI modeli, reasoning effort ve worker sayısı gibi davranışı etkileyen ayarlara erişim sağlıyor. Sabit istemci sırrı bir yetkilendirme sınırı değildir.</p>
+              <h4>Düzeltme</h4><p>Geliştirici ayarlarını üretim build'inden çıkarın veya kimliği doğrulanmış, rol tabanlı ve denetlenebilir yetkilendirme kullanın.</p>
+            </div>
+          </article>
+
+          <article class="finding" id="pres-08" data-severity="info">
+            <header class="finding-head"><span class="finding-number">PRES-08</span><h3>Telegram bildirimleri vendor relay üzerinden</h3><span class="badge info">Bilgi</span></header>
+            <div class="finding-body">
+              <p>Telegram kodu doğrudan Telegram'a değil, <code>api.prescripto.com.tr/webhook/telegram_notify</code> relay'ine bağlanıyor. Böylece etkinleştirildiğinde bildirim içeriği vendor altyapısından geçiyor. İncelenen build'de <code>FEATURE_READY=False</code> olduğu için özellik kapalı görünüyor.</p>
+              <p>Etkinleştirmeden önce gönderilen alanlar, saklama/log politikası ve kullanıcı bilgilendirmesi açıkça tanımlanmalıdır.</p>
+            </div>
+          </article>
+
+          <article class="finding" id="pres-09" data-severity="info">
+            <header class="finding-head"><span class="finding-number">PRES-09</span><h3>Build yolu ve gizleme attribute'ları</h3><span class="badge info">Bilgi</span></header>
+            <div class="finding-body">
+              <p>Binary geliştirici ortamına ait tam build yolu içeriyor. Bazı uygulama dizinleri System attribute'u ile gizlenebiliyor; kurulum sonrasında bu attribute'ları kaldıran komut çalışıyor.</p>
+              <p>Bunlar tek başına kötü amaç göstergesi değildir. Build yolu gereksiz ortam bilgisi açığa çıkarır; gizleme davranışı destek ve denetimi zorlaştırabilir.</p>
+            </div>
+          </article>
+
+          <article class="finding" id="pres-10" data-severity="medium">
+            <header class="finding-head"><span class="finding-number">PRES-10</span><h3>Güncel olmayan güvenlik-hassas runtime</h3><span class="badge medium">Orta</span></header>
+            <div class="finding-body">
+              <div class="register-wrap">
+                <table>
+                  <thead><tr><th>Bileşen</th><th>Paketlenen</th><th>4 Eylül 2026 bakım düzeyi</th></tr></thead>
+                  <tbody>
+                    <tr><td>Python</td><td>3.12.0</td><td>3.12.14 güvenlik bakım sürümü</td></tr>
+                    <tr><td>OpenSSL — CPython TLS bağı</td><td>3.0.11</td><td>3.0.22 güvenlik yaması</td></tr>
+                    <tr><td>SQLite</td><td>3.42.0</td><td>3.53.4 bakım sürümü</td></tr>
+                    <tr><td>Expat</td><td>2.5.0</td><td>2.8.x güvenlik bakım hattı</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>Paket içinde ayrıca OpenSSL 3.0.20 adlı <code>-x64</code> DLL'ler var; ancak CPython <code>_ssl.pyd</code> ve <code>_hashlib.pyd</code> import işaretleri 3.0.11 adlı DLL'lere yöneliyor. Çalışan 1.5.9 LAN servisinin HTTP başlığı da Python 3.12.0 bildirdi.</p>
+              <div class="status-note"><p><strong>Kanıt sınırı:</strong> Eski sürüm kullanımı tek başına Prescripto üzerinde çalışır exploit kanıtı değildir. Uygulamaya özel CVE erişilebilirlik analizi yapılmadı.</p></div>
+              <h4>Düzeltme</h4><p>Desteklenen runtime üzerinde yeniden build alın; native bağımlılıklar ve Qt/Chromium dahil SBOM üretin; sürüm/CVE politikasını CI'da otomatik uygulayın.</p>
+              <div class="evidence"><strong>Kanıt:</strong> python312.dll=3.12.0 · _ssl.pyd → libssl-3.dll=3.0.11 · sqlite3.dll=3.42.0 · pyexpat işareti=2.5.0</div>
+            </div>
+          </article>
+        </div>
+
+        <section class="section" id="akis">
+          <h2>Oturum ve veri akışı</h2>
+          <h3>MEDULA Güvenlik Anahtarı otomasyonu</h3>
+          <p><code>medula_autologin.pyc</code>, Güvenlik Anahtarı görselini yerel <code>ddddocr</code>/ONNX modeliyle işler, sonucu altı haneli rakama normalize eder ve kullanıcı adı/parolayla forma yazar. OCR başarısız olursa görseli kullanıcıya soran manuel fallback vardır. Ayrı HTTP giriş modülünde de CAPTCHA görseli ve çözüm yolu bulunur.</p>
+          <div class="flow" aria-label="MEDULA otomatik giriş akışı">
+            <div><strong>Giriş sayfası</strong><span>Form alanları ve Güvenlik Anahtarı görseli alınır.</span></div>
+            <div><strong>Yerel OCR</strong><span>ddddocr sınıflandırması, altı haneli normalizasyon.</span></div>
+            <div><strong>Form gönderimi</strong><span>Kullanıcı adı, parola ve çözülen değer gönderilir.</span></div>
+            <div><strong>Manuel fallback</strong><span>OCR başarısızsa kullanıcıdan değer istenir.</span></div>
+          </div>
+          <p class="document-note">Bu teknik tespit, SGK'nın otomasyona izin verdiği veya yasakladığı sonucunu oluşturmaz. Resmî entegrasyon/yetkilendirme dayanağı ayrıca değerlendirilmelidir.</p>
+
+          <h3>Başlıca ağ yüzeyi</h3>
+          <div class="register-wrap">
+            <table>
+              <thead><tr><th>Hedef</th><th>Amaç</th><th>Değerlendirme</th></tr></thead>
+              <tbody>
+                <tr><td><code>medeczane.sgk.gov.tr</code></td><td>MEDULA giriş ve reçete işlemleri</td><td>TLS doğrulaması kapalı</td></tr>
+                <tr><td><code>cwxdyyqmudepptmnamoo.supabase.co</code></td><td>Güncelleme, lisans, SUT, AI Edge</td><td>Lisans/SUT CERT_NONE; AI güvensiz fallback; update imzasız</td></tr>
+                <tr><td><code>api.prescripto.com.tr</code></td><td>Telegram relay</td><td>TLS açık; özellik bu build'de kapalı</td></tr>
+                <tr><td><code>0.0.0.0:52413</code> / UDP 52414</td><td>Ana-terminal LAN iletişimi</td><td>Kimlik doğrulamasız HTTP ve keşif</td></tr>
+                <tr><td><code>127.0.0.1:9091/BrowserAc</code></td><td>Yerel tarayıcı kontrolü</td><td>Bu çalışmada aktif test yapılmadı</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section" id="olumlu">
+          <h2>Olumlu güvenlik kontrolleri</h2>
+          <ul class="two-column">
+            <li>Updater path traversal, zip-slip, symlink, reparse-point, boyut ve SHA-256 denetimleri yapıyor.</li>
+            <li>Güncelleme staging, backup ve rollback ile transactional uygulanıyor.</li>
+            <li>Ayrı kampanya terminali TLS 1.2+, fingerprint pinning, HMAC pairing ve IP rate limit içeriyor.</li>
+            <li>Üretim OpenAI anahtarı istemci binary'sinde gömülü bulunmadı.</li>
+            <li>Kurulum yeni Windows servisi, scheduled task veya Run girdisi oluşturmuyor.</li>
+            <li>PII anahtarlarını ve 11 haneli sayıları hedefleyen bir temizleme katmanı mevcut.</li>
+            <li>Dinamik testlerde gerçek credential veya hasta kaydı kullanılmadı.</li>
+          </ul>
+          <p class="document-note">Bu kontroller kritik bulguları kapatmaz; mevcut iyi tasarım parçalarının ürün geneline yayılabileceğini gösterir.</p>
+        </section>
+
+        <section class="section" id="plan">
+          <h2>Düzeltme planı</h2>
+          <div class="timeline">
+            <article><h3>Acil · 0–7 gün</h3><p>MEDULA/Supabase <code>verify=False</code> yollarını kapatın; LAN API'yi varsayılan devre dışı veya loopback yapın; AI ham kayıt ve TLS fallback'ini kaldırın; erişim/yayın loglarını inceleyin.</p></article>
+            <article><h3>Kısa vade · 8–30 gün</h3><p>LAN için TLS + kullanıcı onaylı eşleştirme uygulayın; sırları DPAPI/Credential Manager'a taşıyın; Authenticode ve imzalı manifest zorunlu yapın; runtime bağımlılıklarını güncelleyin.</p></article>
+            <article><h3>Orta vade · 31–90 gün</h3><p>Tehdit modeli, veri akış envanteri, SBOM, güvenli CI/CD ve regresyon testleri oluşturun; geliştirici/debug özelliklerini üretim build'inden ayırın.</p></article>
+          </div>
+        </section>
+
+        <section class="section" id="sinirlar">
+          <h2>Kanıt sınırları</h2>
+          <p>Bu rapor aşağıdaki sonuçları ileri sürmez:</p>
+          <ul class="two-column">
+            <li>Programın kötü amaçlı yazılım olduğu.</li>
+            <li>Hasta verisinin gerçekten sızdırıldığı.</li>
+            <li>Firmanın sağlık verisine yetkisiz eriştiği.</li>
+            <li>Supabase RLS politikalarının hatalı olduğu.</li>
+            <li>Verinin kesin olarak hangi ülkede tutulduğu.</li>
+            <li>Yurt dışı aktarımının hukuka aykırı olduğu.</li>
+            <li>SGK'nın CAPTCHA/session otomasyonunu onayladığı veya yasakladığı.</li>
+            <li>Eski runtime bileşenlerinin fiilen exploit edildiği.</li>
+          </ul>
+          <p>VM'de testten önce Prescripto kalıntıları bulunduğu için kurulum kalıcılık karşılaştırması sınırlı güven düzeyindedir. Supabase sunucu kodu, RLS/policy ayarları, üretim veri bölgesi ve OpenAI saklama politikası bu çalışmanın dışındadır.</p>
+        </section>
+
+        <section class="section sources" id="kaynaklar">
+          <h2>Kanıt ve referanslar</h2>
+          <h3>Yerel kanıt paketleri</h3>
+          <ul>
+            <li><code>01_config_logs/install-20260903-205223.zip</code> — kurulum ve ağ kaydı</li>
+            <li><code>01_config_logs/updated-binaries-20260903-210208.zip</code> — 1.5.9 binary ve metadata</li>
+            <li><code>01_config_logs/sysmon-20260903-212048.zip</code> — süreç/ağ eşlemesi</li>
+            <li><code>01_config_logs/lan-api-20260903-221114.zip</code> — LAN listener probeları</li>
+            <li><code>01_config_logs/credential-poc-20260903-221522.zip</code> — sentetik credential PoC</li>
+            <li><code>01_config_logs/tls-verify-20260903-224941.zip</code> — MEDULA TLS testi</li>
+            <li><code>01_config_logs/edge-capture-20260904-070524.zip</code> — sahte Supabase/lisans testi</li>
+          </ul>
+          <h3>Resmî ve upstream kaynaklar</h3>
+          <ul>
+            <li><a href="https://www.kvkk.gov.tr/Icerik/4110/2018-10">KVKK 2018/10 — özel nitelikli kişisel verilerde yeterli önlemler</a></li>
+            <li><a href="https://www.kvkk.gov.tr/Icerik/2040/Veri-Guvenligine-Iliskin-Yukumlulukler">KVKK — veri güvenliği yükümlülükleri</a></li>
+            <li><a href="https://www.kvkk.gov.tr/Icerik/7929/Standart-Sozlesmeler">KVKK — standart sözleşmeler</a></li>
+            <li><a href="https://medeczane.sgk.gov.tr/eczane/">SGK — MEDULA Eczane portalı</a></li>
+            <li><a href="https://supabase.com/docs/guides/platform/regions">Supabase — proje bölgeleri</a></li>
+            <li><a href="https://www.python.org/downloads/release/python-31214/">Python 3.12.14 güvenlik sürümü</a></li>
+            <li><a href="https://openssl-library.org/news/openssl-3.0-notes/">OpenSSL 3.0 sürüm notları</a></li>
+            <li><a href="https://sqlite.org/changes.html">SQLite sürüm geçmişi</a></li>
+            <li><a href="https://github.com/libexpat/libexpat/releases">Expat sürümleri</a></li>
+          </ul>
+          <p class="document-note">Bu kaynaklar teknik ve veri-yönetişimi bağlamı sağlar; tek başlarına ürün hakkında hukuki ihlal sonucu oluşturmaz.</p>
+        </section>
+      </main>
+    </div>
+
+    <footer>
+      <span>Bu belge teknik güvenlik değerlendirmesidir; hukuki uygunluk veya tıbbi doğruluk raporu değildir.</span>
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      const buttons = [...document.querySelectorAll('.filter-button')];
+      const findings = [...document.querySelectorAll('.finding')];
+      const rows = [...document.querySelectorAll('[data-register-severity]')];
+
+      function setFilter(filter) {
+        buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === filter)));
+        findings.forEach(item => item.classList.toggle('is-hidden', filter !== 'all' && item.dataset.severity !== filter));
+        rows.forEach(row => row.hidden = filter !== 'all' && row.dataset.registerSeverity !== filter);
+      }
+
+      buttons.forEach(button => button.addEventListener('click', () => setFilter(button.dataset.filter)));
+      window.addEventListener('beforeprint', () => setFilter('all'));
+
+      const navLinks = [...document.querySelectorAll('.rail nav a')];
+      const sections = navLinks.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(entries => {
+          const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+          if (!visible) return;
+          navLinks.forEach(link => link.setAttribute('aria-current', String(link.getAttribute('href') === '#' + visible.target.id)));
+        }, { rootMargin: '-15% 0px -70% 0px', threshold: [0, .1, .4] });
+        sections.forEach(section => observer.observe(section));
+      }
+    })();
+  </script>
+</body>
+</html>
